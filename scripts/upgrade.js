@@ -9,7 +9,11 @@ async function main() {
   console.log("Proxy address:", proxyAddress);
 
   const GeniRewarderV2 = await ethers.getContractFactory("GeniRewarder"); 
-  const upgraded = await upgrades.upgradeProxy(proxyAddress, GeniRewarderV2);
+  const upgraded = await upgrades.upgradeProxy(
+    proxyAddress,
+    GeniRewarderV2,
+    {kind: "uups"}
+  );
 
   console.log("✅ Upgrade successful!");
   console.log("New implementation address:", await upgrades.erc1967.getImplementationAddress(proxyAddress));

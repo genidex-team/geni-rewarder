@@ -17,7 +17,7 @@ async function main() {
   const distributor = await upgrades.deployProxy(
     GeniRewarder,
     [deployer.address, tokenAddress, geniDexAddress],
-    { initializer: "initialize" }
+    { initializer: "initialize", kind: "uups" }
   );
 
   await distributor.waitForDeployment();
