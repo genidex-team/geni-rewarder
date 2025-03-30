@@ -121,21 +121,26 @@ contract GeniRewarder is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function getRewardSystemInfo() external view returns (
         uint256 epoch,
+        uint256 tokenPerPoint,
+        uint256 startTime,
+        uint256 totalUnlockable,
         uint256 unlockedTokens,
         uint256 distributedTokens,
-        uint256 unclaimedPoints,
-        uint256 tokenPerPoint
+        uint256 availableTokens,
+        uint256 unclaimedPoints
     ) {
         epoch = currentEpoch;
         Epoch memory e = epochs[epoch];
+        startTime = e.startTime;
+        totalUnlockable = e.totalUnlockable;
+        distributedTokens = e.totalDistributedTokens;
 
         unlockedTokens = _getUnlockedTokens(epoch);
-        distributedTokens = e.totalDistributedTokens;
 
         unclaimedPoints = geniDex.getTotalUnclaimedPoints();
 
-        uint256 available = unlockedTokens > distributedTokens ? unlockedTokens - distributedTokens : 0;
-        tokenPerPoint = unclaimedPoints > 0 ? available / unclaimedPoints : 0;
+        availableTokens = unlockedTokens > distributedTokens ? unlockedTokens - distributedTokens : 0;
+        tokenPerPoint = unclaimedPoints > 0 ? availableTokens / unclaimedPoints : 0;
     }
 
     function getUserRewardInfo(address user) external view returns (
