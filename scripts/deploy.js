@@ -1,13 +1,14 @@
 const { ethers, upgrades, network } = require("hardhat");
 const hre = require("hardhat");
-const data = require("../../geni_data/index");
+const data = require("geni_data");
 
 async function main() {
   const [deployer] = await ethers.getSigners();
 
   const geniDexAddress = data.getGeniDexAddress(network.name, "GeniDex");
   const tokenAddress = data.getGeniTokenAddress(network.name, "GeniToken");
-  console.log(tokenAddress, '====', geniDexAddress);
+  console.log(`tokenAddress:    ${tokenAddress}`);
+  console.log(`geniDexAddress:  ${geniDexAddress}`);
   if (!geniDexAddress || !tokenAddress ) {
     console.error("❌ Missing token or points contract address in data");
     return;

@@ -1,5 +1,5 @@
 const { ethers, upgrades } = require("hardhat");
-const data = require("../../geni_data");
+const data = require("geni_data");
 
 async function main() {
   const network = hre.network.name;
