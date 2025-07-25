@@ -1,0 +1,17 @@
+[profile.default]
+solc = "0.8.27"
+src = "contracts"
+out = "out"
+libs = ['lib']
+test = "test"
+optimizer = false
+optimizer_runs = 1
+auto_detect_solc = true
+via_ir = true
+remappings = [
+    "genidex_contract/=lib/genidex_contract",
+    "geni_token/=lib/geni_token",
+    "@openzeppelin/=@openzeppelin"
+]
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

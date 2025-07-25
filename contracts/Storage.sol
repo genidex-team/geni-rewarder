@@ -10,7 +10,8 @@ abstract contract Storage {
         uint256 distributedTokens;
     }
 
-    uint256 public constant WAD = 10 ** 18;
+    uint256 public constant BASE_UNIT = 10 ** 8;
+    uint256 internal constant TEN_POW_10 = 10 ** 10;
 
     mapping(uint256 => Epoch) public epochs;
     mapping(address => uint256) public totalClaimedTokens;
@@ -23,7 +24,6 @@ abstract contract Storage {
     uint256 public constant UNLOCK_INTERVAL = 60;
 
     uint256 public currentEpoch;
-    uint256 public distributedInPrevEpochs;
 
     uint256 public totalUnclaimedRefPoints;
 }

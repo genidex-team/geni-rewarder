@@ -14,6 +14,7 @@
     "hardhat": "^2.22.19"
   },
   "dependencies": {
+    "@genidex/logger": "^1.0.4",
     "@openzeppelin/contracts-upgradeable": "^5.2.0",
     "@openzeppelin/hardhat-upgrades": "^3.9.0",
     "geni_data": "file:../geni_data",

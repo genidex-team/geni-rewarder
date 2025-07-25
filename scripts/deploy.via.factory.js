@@ -9,12 +9,12 @@ let proxySalt;
 const tokenAddress = data.getGeniTokenAddress(network.name);
 const geniDexAddress = data.getGeniDexAddress(network.name);
 
-if(data.isDevnet(network.name)){
-    // proxySalt = data.getTokenSalt();
-    proxySalt = data.randomBytes32();
-}else{
+// if(data.isDevnet(network.name)){
+//     // proxySalt = data.getTokenSalt();
+//     proxySalt = data.randomBytes32();
+// }else{
     proxySalt = data.getRewarderSalt();
-}
+// }
 
 async function main() {
 

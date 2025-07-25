@@ -7,6 +7,7 @@ async function main() {
 
   console.log(`Upgrading GeniRewarder on network: ${network}`);
   console.log("Proxy address:", proxyAddress);
+  console.log("Old implementation address:", await upgrades.erc1967.getImplementationAddress(proxyAddress));
 
   const GeniRewarderV2 = await ethers.getContractFactory("GeniRewarder"); 
   const upgraded = await upgrades.upgradeProxy(

@@ -1,3 +1,4 @@
+require('@genidex/logger');
 require("@nomicfoundation/hardhat-toolbox");
 require('@openzeppelin/hardhat-upgrades');
 

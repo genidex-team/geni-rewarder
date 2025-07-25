@@ -34,11 +34,10 @@ contract GeniRewarder is
     function _initEpochIfNeeded() internal {
         if (block.timestamp >= epochs[currentEpoch].startTime + EPOCH_DURATION) {
             emit EpochEnded(currentEpoch);
-            distributedInPrevEpochs += epochs[currentEpoch].distributedTokens;
             currentEpoch += 1;
             uint256 currentBalance = geniToken.balanceOf(address(this));
             epochs[currentEpoch].startTime = block.timestamp;
-            epochs[currentEpoch].totalUnlockable = currentBalance / 2;
+            epochs[currentEpoch].totalUnlockable = currentBalance / (2 * TEN_POW_10);
             epochs[currentEpoch].distributedTokens = 0;
 
             emit EpochStarted(currentEpoch, block.timestamp);
@@ -55,11 +54,12 @@ contract GeniRewarder is
         return (epoch.totalUnlockable * (elapsed / UNLOCK_INTERVAL)) / totalMinutes;
     }
 
-    function contribute(uint256 amount) external {
-        require(amount > 0, "Zero amount");
-        require(geniToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
-        epochs[currentEpoch].totalUnlockable += amount / 2;
-        emit Contributed(msg.sender, amount);
+    function contribute(uint256 normAmount) external {
+        require(normAmount > 0, "Zero amount");
+        uint256 rawAmount = normAmount * TEN_POW_10;
+        require(geniToken.transferFrom(msg.sender, address(this), rawAmount), "Transfer failed");
+        epochs[currentEpoch].totalUnlockable += normAmount / 2;
+        emit Contributed(msg.sender, normAmount);
     }
 
     function claim(uint256 pointsToClaim) external {
@@ -78,7 +78,7 @@ contract GeniRewarder is
         require(unlocked > epoch.distributedTokens, "No tokens available");
 
         uint256 available = unlocked - epoch.distributedTokens;
-        uint256 pointsPerGENI = WAD * totalUnclaimedPoints / available;
+        uint256 pointsPerGENI = BASE_UNIT * totalUnclaimedPoints / available;
         // uint256 reward = pointsToClaim / pointsPerGENI;
         uint256 reward = available * pointsToClaim / totalUnclaimedPoints;
 
@@ -88,7 +88,7 @@ contract GeniRewarder is
         totalClaimedTokens[msg.sender] += reward;
 
         geniDex.deductUserPoints(msg.sender, pointsToClaim);
-        geniToken.transfer(msg.sender, reward);
+        geniToken.transfer(msg.sender, reward*TEN_POW_10);
         _addReferralPoints(pointsToClaim);
 
         emit Claimed(msg.sender, currentEpoch, reward, pointsToClaim, pointsPerGENI);
@@ -110,7 +110,7 @@ contract GeniRewarder is
         require(unlocked > epoch.distributedTokens, "No tokens available");
 
         uint256 available = unlocked - epoch.distributedTokens;
-        uint256 pointsPerGENI = WAD * totalUnclaimedPoints / available;
+        uint256 pointsPerGENI = BASE_UNIT * totalUnclaimedPoints / available;
         uint256 reward = available * amount / totalUnclaimedPoints;
 
         require(reward > 0, "Reward = 0");
@@ -119,7 +119,7 @@ contract GeniRewarder is
         totalClaimedTokens[msg.sender] += reward;
 
         referralPoints[msg.sender] = userPoints - amount;
-        geniToken.transfer(msg.sender, reward);
+        geniToken.transfer(msg.sender, reward*TEN_POW_10);
 
         emit Claimed(msg.sender, currentEpoch, reward, amount, pointsPerGENI);
     }
@@ -140,7 +140,6 @@ contract GeniRewarder is
         uint256 totalUnlockable,
         uint256 unlockedTokens,
         uint256 distributedTokens,
-        uint256 totalDistributedInPrevEpochs,
         uint256 availableTokens,
         uint256 unclaimedPoints,
         uint256 geniBalance
@@ -150,18 +149,18 @@ contract GeniRewarder is
         startTime = e.startTime;
         totalUnlockable = e.totalUnlockable;
         distributedTokens = e.distributedTokens;
-        totalDistributedInPrevEpochs = distributedInPrevEpochs;
 
         unlockedTokens = _getUnlockedTokens(epoch);
         unclaimedPoints = totalUnclaimedRefPoints + geniDex.getTotalUnclaimedPoints();
 
         availableTokens = unlockedTokens > distributedTokens ? unlockedTokens - distributedTokens : 0;
-        pointsPerGENI = availableTokens > 0 ? WAD * unclaimedPoints / availableTokens  : 0;
-        geniBalance = geniToken.balanceOf(address(this));
+        pointsPerGENI = availableTokens > 0 ? BASE_UNIT * unclaimedPoints / availableTokens  : 0;
+        geniBalance = geniToken.balanceOf(address(this)) / TEN_POW_10;
     }
 
     function getUserRewardInfo(address user) external view returns (
-        uint256 userPoints,
+        uint256 tradingPoints,
+        uint256 refPoints,
         uint256 estimatedReward,
         uint256 totalClaimed,
         uint256 pointsPerGENI
@@ -173,12 +172,14 @@ contract GeniRewarder is
         uint256 distributedTokens = e.distributedTokens;
         uint256 unclaimedPoints = totalUnclaimedRefPoints + geniDex.getTotalUnclaimedPoints();
 
-        uint256 userPts = geniDex.getUserPoints(user);
+        refPoints = referralPoints[msg.sender];
+        tradingPoints = geniDex.getUserPoints(user);
         uint256 available = unlockedTokens > distributedTokens ? unlockedTokens - distributedTokens : 0;
-        pointsPerGENI = available > 0 ? WAD * unclaimedPoints / available : 0;
+        pointsPerGENI = available > 0 ? BASE_UNIT * unclaimedPoints / available : 0;
 
-        userPoints = userPts;
-        estimatedReward = unclaimedPoints > 0 ? userPts * available / unclaimedPoints : 0;
+        uint256 userPoints = tradingPoints + refPoints;
+        // estimatedReward = unclaimedPoints > 0 ? userPoints * available / unclaimedPoints : 0;
+        estimatedReward = userPoints * pointsPerGENI / BASE_UNIT;
         totalClaimed = totalClaimedTokens[user];
     }
 }
