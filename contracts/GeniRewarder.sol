@@ -55,21 +55,21 @@ contract GeniRewarder is
     }
 
     function contribute(uint256 normAmount) external {
-        require(normAmount > 0, "Zero amount");
+        require(normAmount > 0, "Zero points");
         uint256 rawAmount = normAmount * TEN_POW_10;
         require(geniToken.transferFrom(msg.sender, address(this), rawAmount), "Transfer failed");
         epochs[currentEpoch].totalUnlockable += normAmount / 2;
         emit Contributed(msg.sender, normAmount);
     }
 
-    function claim(uint256 pointsToClaim) external {
-        require(pointsToClaim > 0, "Zero points");
+    function claimTradingReward(uint256 points) external {
+        require(points > 0, "Zero points");
 
         uint256 userPoints = geniDex.getUserPoints(msg.sender);
-        require(userPoints >= pointsToClaim, "Not enough user points");
+        require(userPoints >= points, "Not enough user points");
 
         uint256 totalUnclaimedPoints = totalUnclaimedRefPoints + geniDex.getTotalUnclaimedPoints();
-        require(totalUnclaimedPoints >= pointsToClaim, "Not enough unclaimed points");
+        require(totalUnclaimedPoints >= points, "Not enough unclaimed points");
 
         _initEpochIfNeeded();
         Epoch storage epoch = epochs[currentEpoch];
@@ -79,29 +79,29 @@ contract GeniRewarder is
 
         uint256 available = unlocked - epoch.distributedTokens;
         uint256 pointsPerGENI = BASE_UNIT * totalUnclaimedPoints / available;
-        // uint256 reward = pointsToClaim / pointsPerGENI;
-        uint256 reward = available * pointsToClaim / totalUnclaimedPoints;
+        // uint256 reward = points / pointsPerGENI;
+        uint256 reward = available * points / totalUnclaimedPoints;
 
         require(reward > 0, "Reward = 0");
 
         epoch.distributedTokens += reward;
         totalClaimedTokens[msg.sender] += reward;
 
-        geniDex.deductUserPoints(msg.sender, pointsToClaim);
+        geniDex.deductUserPoints(msg.sender, points);
         geniToken.transfer(msg.sender, reward*TEN_POW_10);
-        _addReferralPoints(pointsToClaim);
+        _addReferralPoints(points);
 
-        emit Claimed(msg.sender, currentEpoch, reward, pointsToClaim, pointsPerGENI);
+        emit Claimed(msg.sender, currentEpoch, reward, points, pointsPerGENI);
     }
 
-    function redeemReferralPoints(uint256 amount) external {
-        require(amount > 0, "Zero points");
+    function claimReferralReward(uint256 points) external {
+        require(points > 0, "Zero points");
 
         uint256 userPoints = referralPoints[msg.sender];
-        require(userPoints >= amount, "Not enough user points");
+        require(userPoints >= points, "Not enough user points");
 
         uint256 totalUnclaimedPoints = totalUnclaimedRefPoints + geniDex.getTotalUnclaimedPoints();
-        require(totalUnclaimedPoints >= amount, "Not enough unclaimed points");
+        require(totalUnclaimedPoints >= points, "Not enough unclaimed points");
 
         _initEpochIfNeeded();
         Epoch storage epoch = epochs[currentEpoch];
@@ -111,17 +111,17 @@ contract GeniRewarder is
 
         uint256 available = unlocked - epoch.distributedTokens;
         uint256 pointsPerGENI = BASE_UNIT * totalUnclaimedPoints / available;
-        uint256 reward = available * amount / totalUnclaimedPoints;
+        uint256 reward = available * points / totalUnclaimedPoints;
 
         require(reward > 0, "Reward = 0");
 
         epoch.distributedTokens += reward;
         totalClaimedTokens[msg.sender] += reward;
 
-        referralPoints[msg.sender] = userPoints - amount;
+        referralPoints[msg.sender] = userPoints - points;
         geniToken.transfer(msg.sender, reward*TEN_POW_10);
 
-        emit Claimed(msg.sender, currentEpoch, reward, amount, pointsPerGENI);
+        emit Claimed(msg.sender, currentEpoch, reward, points, pointsPerGENI);
     }
 
     function _addReferralPoints(uint256 points) private {
@@ -178,7 +178,6 @@ contract GeniRewarder is
         pointsPerGENI = available > 0 ? BASE_UNIT * unclaimedPoints / available : 0;
 
         uint256 userPoints = tradingPoints + refPoints;
-        // estimatedReward = unclaimedPoints > 0 ? userPoints * available / unclaimedPoints : 0;
         estimatedReward = userPoints * pointsPerGENI / BASE_UNIT;
         totalClaimed = totalClaimedTokens[user];
     }
